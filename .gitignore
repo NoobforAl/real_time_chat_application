@@ -20,3 +20,9 @@
 # Go workspace file
 go.work
 go.work.sum
+
+# temp dir & files
+tmp
+
+# proto file golang
+*.pb.go
