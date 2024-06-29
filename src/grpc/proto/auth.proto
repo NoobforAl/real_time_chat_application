@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/NoobforAl/real_time_chat_application/src/grpc/auth";
+
+service AuthService {
+    rpc Login (LoginRequest) returns (LoginInfoReply) {}
+}
+
+message LoginRequest {
+    string token = 1;
+}
+
+message LoginInfoReply {
+    string id = 1;
+    string username = 2;
+    int32 code_status = 3;
+}
+
