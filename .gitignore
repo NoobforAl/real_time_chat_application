@@ -26,3 +26,6 @@ tmp
 
 # proto file golang
 *.pb.go
+
+# .env file
+.env
