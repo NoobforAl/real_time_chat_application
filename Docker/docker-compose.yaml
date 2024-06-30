@@ -1,0 +1,15 @@
+# !! Warning: this docker file for local test ( database )!
+version: "3.8"
+
+services:
+    redis:
+        image: redis:latest
+        ports:
+            - "6379:6379"
+        restart: always
+
+    mongodb:
+        image: mongo:latest
+        ports:
+            - "27017:27017"
+        restart: always
