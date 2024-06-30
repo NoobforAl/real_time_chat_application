@@ -7,12 +7,12 @@ type Room struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 
-	AllowUsers []string // TODO:#facture
+	AllowUsers []string // TODO:#feature
 
-	UserId string // TODO:#facture, add how user create this room
+	UserId string // TODO:#feature, add how user create this room
 
-	IsOpen bool // TODO: #facture
+	IsOpen bool // TODO: #feature
 
 	CreateAt time.Time `json:"create_at"`
-	CloseAt  time.Time // TODO: #facture
+	CloseAt  time.Time // TODO: #feature
 }
