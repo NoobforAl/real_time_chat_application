@@ -25,6 +25,8 @@ type baseConfig struct {
 
 	secretKey   string
 	maxAgeToken time.Duration
+
+	noncForHashPassword string
 }
 
 var onc sync.Once
@@ -62,9 +64,9 @@ func getMaxAgeToken(log contract.Logger) time.Duration {
 
 func InitConfig(logger contract.Logger) {
 	onc.Do(func() {
-		err := godotenv.Load()
+		err := godotenv.Load(".env")
 		if err != nil {
-			logger.Warning("Error loading .env file")
+			logger.Warning("not found .env file!")
 		}
 
 		checkIsExistEnvVariables(logger)
@@ -84,6 +86,8 @@ func InitConfig(logger contract.Logger) {
 
 			secretKey:   os.Getenv("SECRET_KEY"),
 			maxAgeToken: getMaxAgeToken(logger),
+
+			noncForHashPassword: os.Getenv("NONC_FOR_HASH_PASSWORD"),
 		}
 	})
 }
@@ -102,3 +106,5 @@ func GrpcAuthUri() string { return config.grpcAuthUri }
 
 func SecretKey() string          { return config.secretKey }
 func MaxAgeToken() time.Duration { return config.maxAgeToken }
+
+func NoncForHashPassword() string { return config.noncForHashPassword }
