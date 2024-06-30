@@ -13,6 +13,6 @@ message LoginRequest {
 message LoginInfoReply {
     string id = 1;
     string username = 2;
-    int32 code_status = 3;
+    bool notification = 4;
 }
 
