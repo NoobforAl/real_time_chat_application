@@ -1,0 +1,3 @@
+[submodule "asynqmon"]
+	path = asynqmon
+	url = https://github.com/hibiken/asynqmon.git
