@@ -5,14 +5,14 @@ import (
 	"sync"
 
 	"github.com/NoobforAl/real_time_chat_application/src/contract"
-	"github.com/NoobforAl/real_time_chat_application/src/entity"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type store struct {
-	db    *mongo.Client
+	db    *mongo.Database
 	cache *redis.Client
 	log   contract.Logger
 }
@@ -20,7 +20,47 @@ type store struct {
 var onc sync.Once
 var localStore *store
 
-func New(ctx context.Context, mongoUri, redisUri, redisPassword string, logger contract.Logger) contract.Store {
+func initMongodbFiled(
+	ctx context.Context,
+	client *mongo.Database,
+	log contract.Logger,
+) {
+	// init user coll
+	userColl := client.Collection("user")
+
+	indexUserModelFiled := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "username", Value: 1},
+			{Key: "email", Value: 1},
+		},
+		Options: options.Index().SetUnique(true),
+	}
+
+	_, err := userColl.Indexes().CreateOne(ctx, indexUserModelFiled)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	roomColl := client.Collection("room")
+
+	indexRoomModelFiled := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "name", Value: 1},
+		},
+		Options: options.Index().SetUnique(true),
+	}
+
+	_, err = roomColl.Indexes().CreateOne(ctx, indexRoomModelFiled)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func New(
+	ctx context.Context,
+	mongoUri, redisUri, redisPassword string,
+	logger contract.Logger,
+) contract.Store {
 	onc.Do(func() {
 		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 		optsMongodb := options.Client().ApplyURI(mongoUri).SetServerAPIOptions(serverAPI)
@@ -29,6 +69,8 @@ func New(ctx context.Context, mongoUri, redisUri, redisPassword string, logger c
 		if err != nil {
 			logger.Fatal(err)
 		}
+
+		initMongodbFiled(ctx, mongodbClient.Database("real_time_chat_app"), logger)
 
 		redisClient := redis.NewClient(&redis.Options{
 			Addr:     redisUri,
@@ -42,7 +84,7 @@ func New(ctx context.Context, mongoUri, redisUri, redisPassword string, logger c
 		}
 
 		localStore = &store{
-			db:    mongodbClient,
+			db:    mongodbClient.Database("real_time_chat_app"),
 			cache: redisClient,
 			log:   logger,
 		}
@@ -50,12 +92,3 @@ func New(ctx context.Context, mongoUri, redisUri, redisPassword string, logger c
 
 	return localStore
 }
-
-func (s *store) User(ctx context.Context, id string) entity.User
-func (s *store) CreateUser(ctx context.Context, userData entity.User) entity.User
-
-func (s *store) Messages(ctx context.Context, roomId string, maxLen int) []*entity.Message
-func (s *store) CreateMessage(ctx context.Context, message entity.Message) entity.Message
-
-func (s *store) Rooms(ctx context.Context, maxLen int) []*entity.Room
-func (s *store) CreateRoom(ctx context.Context, message entity.Room) entity.Room
