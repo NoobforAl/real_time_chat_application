@@ -2,13 +2,160 @@ version: "3.8"
 
 services:
     redis:
-        image: redis:latest
+        image: redis:7.2.4
+        container_name: redis
         ports:
             - "6379:6379"
-        restart: always
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        networks:
+            - real-time-chat-network
 
     mongodb:
-        image: mongo:latest
+        image: mongo:7.0.9
+        container_name: mongodb
         ports:
             - "27017:27017"
-        restart: always
+        healthcheck:
+            test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 40s
+        networks:
+            - real-time-chat-network
+
+    auth_api:
+        image: auth_api:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: auth_api
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    room_api:
+        image: room_api:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: room_api
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    message_api:
+        image: message_api:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: message_api
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    notifications_api:
+        image: notifications_api:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: notifications_api
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    auth_api_grpc:
+        image: auth_api_grpc:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: auth_api_grpc
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    rooms_task_server:
+        image: rooms_task_server:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: rooms_task_server
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    message_task_server:
+        image: message_task_server:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: message_task_server
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+    notifications_task_server:
+        image: notifications_task_server:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: notifications_task_server
+        env_file:
+            - .env
+        depends_on:
+            redis:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - real-time-chat-network
+
+networks:
+    real-time-chat-network:
+        driver: bridge

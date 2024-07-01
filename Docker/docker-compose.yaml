@@ -3,13 +3,13 @@ version: "3.8"
 
 services:
     redis:
-        image: redis:latest
+        image: redis:7.2.4
         ports:
             - "6379:6379"
         restart: always
 
     mongodb:
-        image: mongo:latest
+        image: mongo:7.0.9
         ports:
             - "27017:27017"
         restart: always
