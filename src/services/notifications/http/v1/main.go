@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// TODO: fix it later, I implementation it in messages service!
 func main() {
 	app := fiber.New()
 	logger := logging.New()
