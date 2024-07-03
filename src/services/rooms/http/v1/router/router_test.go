@@ -70,10 +70,7 @@ func TestRoutApp(t *testing.T) {
 		body, _ := json.Marshal(payload)
 		req := httptest.NewRequest("GET", "/rooms/", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:  "Access-Token",
-			Value: accessToken + "bad string, this make it pass test:)",
-		})
+		req.Header.Add("Access-Token", accessToken+"bad string, this make it pass test:)")
 
 		resp, err := app.Test(req)
 		assert.NoError(t, err)
@@ -84,10 +81,7 @@ func TestRoutApp(t *testing.T) {
 		body, _ := json.Marshal(payload)
 		req := httptest.NewRequest("POST", "/rooms/", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:  "Access-Token",
-			Value: accessToken,
-		})
+		req.Header.Add("Access-Token", accessToken)
 
 		resp, err := app.Test(req)
 		assert.NoError(t, err)
@@ -98,10 +92,7 @@ func TestRoutApp(t *testing.T) {
 		body, _ := json.Marshal(payload)
 		req := httptest.NewRequest("POST", "/rooms/", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:  "Access-Token",
-			Value: accessToken,
-		})
+		req.Header.Add("Access-Token", accessToken)
 
 		resp, err := app.Test(req)
 		assert.NoError(t, err)
@@ -110,10 +101,7 @@ func TestRoutApp(t *testing.T) {
 
 	t.Run("test get all rooms", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/rooms/", nil)
-		req.AddCookie(&http.Cookie{
-			Name:  "Access-Token",
-			Value: accessToken,
-		})
+		req.Header.Add("Access-Token", accessToken)
 
 		resp, err := app.Test(req)
 		assert.NoError(t, err)

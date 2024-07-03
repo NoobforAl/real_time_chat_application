@@ -320,18 +320,6 @@ func TestNotificationOperations(t *testing.T) {
 		}
 	})
 
-	t.Run("create new notification room", func(t *testing.T) {
-		notificationRoom := entity.NotificationRoom{
-			UserId: createdUser.Id,
-			RoomId: createdRoom.Id,
-		}
-
-		createdNotificationRoom, err = store.CreateNotificationRoom(ctx, notificationRoom)
-		assert.Nil(t, err, "Error should be nil")
-		assert.Equal(t, createdNotificationRoom.UserId, notificationRoom.UserId, "SenderId should match")
-		assert.Equal(t, createdNotificationRoom.RoomId, notificationRoom.RoomId, "RoomId should match")
-	})
-
 	t.Run("create new notification", func(t *testing.T) {
 		notification := entity.Notification{
 			SenderId:           createdUser.Id,
@@ -353,16 +341,5 @@ func TestNotificationOperations(t *testing.T) {
 		assert.NotEmpty(t, notifications, "Notifications should not be empty")
 		assert.Equal(t, createdNotification.SenderId, notifications[0].SenderId, "SenderId should match")
 		assert.Equal(t, createdNotification.RoomId, notifications[0].RoomId, "RoomId should match")
-	})
-
-	t.Run("update notification room", func(t *testing.T) {
-		notificationRoom := entity.NotificationRoom{
-			Id:     createdNotificationRoom.Id,
-			Enable: true,
-		}
-
-		updatedNotificationRoom, err := store.UpdateNotificationRoom(ctx, notificationRoom)
-		assert.Nil(t, err, "Error should be nil")
-		assert.Equal(t, notificationRoom.Enable, updatedNotificationRoom.Enable, "Enable should match")
 	})
 }

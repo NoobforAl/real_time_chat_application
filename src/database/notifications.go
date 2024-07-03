@@ -41,17 +41,11 @@ func entityNotificationToModel(notification entity.Notification) (Notification, 
 		return Notification{}, appErrors.ErrNotValidId
 	}
 
-	notificationRoomId, err := primitive.ObjectIDFromHex(notification.NotificationRoomId)
-	if err != nil {
-		return Notification{}, appErrors.ErrNotValidId
-	}
-
 	return Notification{
-		SenderId:           senderId,
-		RoomId:             roomId,
-		NotificationRoomId: notificationRoomId,
-		ReadNotification:   notification.ReadNotification,
-		CreateAt:           notification.CreateAt,
+		SenderId:         senderId,
+		RoomId:           roomId,
+		ReadNotification: notification.ReadNotification,
+		CreateAt:         notification.CreateAt,
 	}, nil
 }
 
