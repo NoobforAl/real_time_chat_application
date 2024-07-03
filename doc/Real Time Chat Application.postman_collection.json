@@ -1,0 +1,244 @@
+{
+	"info": {
+		"_postman_id": "d2e3b86d-18e3-4094-85e8-655d3598128a",
+		"name": "Real Time Chat Application",
+		"description": "This post man for `elc.care` task!",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30256855"
+	},
+	"item": [
+		{
+			"name": "Auth Service",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test1235678\",\n    \"password\": \"test1235678\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auth_api}}/login",
+							"host": [
+								"{{auth_api}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test1235678\",\n    \"password\": \"test1235678\",\n    \"email\": \"test@test.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{auth_api}}/register",
+							"host": [
+								"{{auth_api}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Room Service",
+			"item": [
+				{
+					"name": "get all rooms",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Access-Token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QxMjM1Njc4Iiwibm90aWZpY2F0aW9ucyI6ZmFsc2UsImV4cCI6MTcxOTkzOTc4MywianRpIjoiNjY4NDE2OTE2NjZmMDViOGVhZjQxOTk4In0._RCzX5Znoc1Eck-3qDu_TuR2Mh-zZut4hCqPWd7dwqI",
+								"description": "jwt token",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{room_api}}/rooms/",
+							"host": [
+								"{{room_api}}"
+							],
+							"path": [
+								"rooms",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create new room",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Access-Token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QxMjM1Njc4Iiwibm90aWZpY2F0aW9ucyI6ZmFsc2UsImV4cCI6MTcxOTkzOTc4MywianRpIjoiNjY4NDE2OTE2NjZmMDViOGVhZjQxOTk4In0._RCzX5Znoc1Eck-3qDu_TuR2Mh-zZut4hCqPWd7dwqI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"this_my_app_name\",\n    \"description\": \"description\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{room_api}}/rooms/",
+							"host": [
+								"{{room_api}}"
+							],
+							"path": [
+								"rooms",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Message Service",
+			"item": [
+				{
+					"name": "get room messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Access-Token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QxMjM1Njc4MSIsIm5vdGlmaWNhdGlvbnMiOmZhbHNlLCJleHAiOjE3MTk5NTQyNDksImp0aSI6IjY2ODQ0NjgyZTMyNDdiMTYzYmU4OWM3ZiJ9.PY9iLyOLwcnAuxFWSocqamcxxtGVxrPWXfV_NRwm1N8",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{message_api}}/messages/:room_id",
+							"host": [
+								"{{message_api}}"
+							],
+							"path": [
+								"messages",
+								":room_id"
+							],
+							"variable": [
+								{
+									"key": "room_id",
+									"value": "668431307b18eb0dc4bb97d9"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "new message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Access-Token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QxMjM1Njc4Iiwibm90aWZpY2F0aW9ucyI6ZmFsc2UsImV4cCI6MTcxOTk0MDk0MSwianRpIjoiNjY4NDE2OTE2NjZmMDViOGVhZjQxOTk4In0.cHUvG4UWnMPUfzI55loy0D7u2vz7MdPUysLHV_je20Q",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"sample content\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{message_api}}/messages/:room_id",
+							"host": [
+								"{{message_api}}"
+							],
+							"path": [
+								"messages",
+								":room_id"
+							],
+							"variable": [
+								{
+									"key": "room_id",
+									"value": "668431477b18eb0dc4bb97db"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "auth_api",
+			"value": "127.0.0.1:3000",
+			"type": "string"
+		},
+		{
+			"key": "room_api",
+			"value": "127.0.0.1:3001",
+			"type": "string"
+		},
+		{
+			"key": "message_api",
+			"value": "127.0.0.1:3002",
+			"type": "string"
+		}
+	]
+}
