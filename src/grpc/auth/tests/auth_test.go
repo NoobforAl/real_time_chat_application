@@ -9,6 +9,7 @@ import (
 	"github.com/NoobforAl/real_time_chat_application/src/config"
 	"github.com/NoobforAl/real_time_chat_application/src/database"
 	"github.com/NoobforAl/real_time_chat_application/src/entity"
+	"github.com/NoobforAl/real_time_chat_application/src/grpc/auth"
 	"github.com/NoobforAl/real_time_chat_application/src/logging"
 	"github.com/NoobforAl/real_time_chat_application/src/services/auth/jwt"
 	"github.com/joho/godotenv"
@@ -17,10 +18,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var serverTest *server
-
 func TestMain(m *testing.M) {
-	err := godotenv.Load("./../../../.env")
+	err := godotenv.Load("./../../../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
@@ -30,14 +29,9 @@ func TestMain(m *testing.M) {
 
 	config.InitConfig(logger)
 
-	mongodbUri := config.MongodbUri()
+	store := database.New(ctx, logger)
 
-	redisUri := config.RedisUri()
-	redisPassword := config.RedisPassword()
-
-	store := database.New(ctx, mongodbUri, redisUri, redisPassword, logger)
-
-	serverTest = New(store, logger)
+	serverTest := auth.New(store, logger)
 	go serverTest.Run(config.GrpcAuthUri())
 
 	// wait for server complete start
@@ -47,6 +41,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestAuthGrpc(t *testing.T) {
+	serverTest := auth.New(nil, nil)
+
 	userData := entity.User{
 		Id:       "sample_id",
 		Username: "sample_user_name",
@@ -61,17 +57,17 @@ func TestAuthGrpc(t *testing.T) {
 	}
 	defer conn.Close()
 
-	c := NewAuthServiceClient(conn)
+	c := auth.NewAuthServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	infoToken, err := c.Login(ctx, &LoginRequest{Token: accessToken})
+	infoToken, err := c.Login(ctx, &auth.LoginRequest{Token: accessToken})
 	assert.NoError(t, err)
 	assert.Equal(t, infoToken.GetId(), userData.Id)
 	assert.Equal(t, infoToken.GetUsername(), userData.Username)
 	assert.Equal(t, infoToken.GetNotification(), userData.Notification)
 
-	_, err = serverTest.Login(context.TODO(), &LoginRequest{Token: accessToken + "some_string"})
+	_, err = serverTest.Login(context.TODO(), &auth.LoginRequest{Token: accessToken + "some_string"})
 	assert.Error(t, err)
 }

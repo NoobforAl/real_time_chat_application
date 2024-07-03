@@ -37,6 +37,7 @@ func New(store contract.Store, logger contract.Logger) *server {
 func (s *server) Login(ctx context.Context, in *LoginRequest) (*LoginInfoReply, error) {
 	info_token, err := jwt.ValidateToken(in.Token, []byte(config.SecretKey()))
 	if err != nil {
+		s.log.Error(err)
 		return nil, err
 	}
 
