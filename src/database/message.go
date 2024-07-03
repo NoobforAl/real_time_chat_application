@@ -97,7 +97,7 @@ func (s *store) UserMessages(ctx context.Context, userId string, startTime, endT
 	}
 
 	filter := bson.M{
-		"user_id": objectID,
+		"sender_id": objectID,
 		"timestamp": bson.M{
 			"$gte": startTime,
 			"$lte": endTime,
@@ -137,17 +137,27 @@ func (s *store) SaveMessageToArchive(ctx context.Context, userId string, message
 	for _, message := range messages {
 		msg, err := entityMessageToModel(*message)
 		if err != nil {
+			s.log.Error(err)
 			return err
 		}
 
-		_, err = messageColl.DeleteOne(ctx, bson.M{"_id": msg.Id})
+		objectID, err := primitive.ObjectIDFromHex(message.Id)
 		if err != nil {
+			s.log.Error(err)
+			return appErrors.ErrNotValidId
+		}
+
+		_, err = messageColl.DeleteOne(ctx, bson.M{"_id": objectID})
+		if err != nil {
+			s.log.Error(err)
 			return err
 		}
 
+		s.log.Debug("archive this message: ", message)
 		msg.Id = primitive.ObjectID{}
 		_, err = userMessageColl.InsertOne(ctx, msg)
 		if err != nil {
+			s.log.Error(err)
 			return err
 		}
 	}
@@ -165,13 +175,14 @@ func (s *store) AllArchiveMessage(ctx context.Context, userId string) ([]*entity
 
 	var messagesArchived []*entity.Message
 	for cursor.Next(ctx) {
-		var message entity.Message
+		var message Message
 		err := cursor.Decode(&message)
 		if err != nil {
 			return nil, err
 		}
 
-		messagesArchived = append(messagesArchived, &message)
+		entityMessage := modelMessageToEntity(message)
+		messagesArchived = append(messagesArchived, &entityMessage)
 	}
 
 	return messagesArchived, nil
