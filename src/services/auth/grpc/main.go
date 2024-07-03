@@ -13,13 +13,8 @@ func main() {
 	logger := logging.New()
 	ctx := context.Background()
 
-	mongodbUri := config.MongodbUri()
-
-	redisUri := config.RedisUri()
-	redisPassword := config.RedisPassword()
-
-	store := database.New(ctx, mongodbUri, redisUri, redisPassword, logger)
 	config.InitConfig(logger)
+	store := database.New(ctx, logger)
 
 	server := auth.New(store, logger)
 	server.Run(config.GrpcAuthUri())
