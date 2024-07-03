@@ -7,12 +7,15 @@ build_all: generate build_task_server build_grpc_sevices build_api_service
 
 run:  #TODO your option
 
-tests:
-	$(GO) test ./...
-
 generate:
 	$(GO) generate ./...
 
+run_docker_compose: create_vendor
+	docker compose -f "docker-compose.yaml" down 
+	docker compose -f "docker-compose.yaml" up -d --build 
+
+create_vendor:
+	$(GO) mod vendor
 
 build_api_service: auth_api room_api message_api notifications_api
 	@echo "done build server api app"
@@ -64,3 +67,43 @@ notifications_task_server:
 	@echo "start build notifications_task_server"
 	$(GO) build -mod=vendor -o notifications_task_server src/tasks/notifications/notifications.go 
 	@echo "start finish notifications_task_server"
+
+tests:
+	@echo "run docker compose test database"
+	@docker compose -f "docker/docker-compose.yaml" down
+	@docker compose -f "docker/docker-compose.yaml" up -d --build 
+	
+	@echo "run test database & store"
+	$(GO) test -timeout 30s -tags app_debug_mod -coverprofile=/tmp/vscode-gobr19vy/go-code-cover github.com/NoobforAl/real_time_chat_application/src/database
+
+	@echo "restart database"
+	@docker compose -f "docker/docker-compose.yaml" down
+	@docker compose -f "docker/docker-compose.yaml" up -d --build 
+
+	@echo "run grpc auth test"
+	$(GO) test -timeout 30s -tags app_debug_mod -coverprofile=/tmp/vscode-gobr19vy/go-code-cover github.com/NoobforAl/real_time_chat_application/src/grpc/auth/tests
+
+	@echo "restart database"
+	@docker compose -f "docker/docker-compose.yaml" down
+	@docker compose -f "docker/docker-compose.yaml" up -d --build 
+
+	@echo "run test message task"
+	$(GO) test -timeout 30s -tags app_debug_mod -coverprofile=/tmp/vscode-gobr19vy/go-code-cover github.com/NoobforAl/real_time_chat_application/src/tasks/messages/tasks_message/tests
+
+	@echo "restart database"
+	@docker compose -f "docker/docker-compose.yaml" down
+	@docker compose -f "docker/docker-compose.yaml" up -d --build 
+
+	@echo "run auth service test"
+	$(GO) test -timeout 30s -tags app_debug_mod -coverprofile=/tmp/vscode-gobr19vy/go-code-cover github.com/NoobforAl/real_time_chat_application/src/services/auth/http/v1/router
+
+	@echo "restart database"
+	@docker compose -f "docker/docker-compose.yaml" down
+	@docker compose -f "docker/docker-compose.yaml" up -d --build 
+
+	@echo "run room service test"
+	$(GO) test -timeout 30s -tags app_debug_mod -coverprofile=/tmp/vscode-gobr19vy/go-code-cover github.com/NoobforAl/real_time_chat_application/src/services/rooms/http/v1/router
+
+	@echo "down databases"
+	@docker compose -f "docker/docker-compose.yaml" down
+	@echo "see TODOs"
