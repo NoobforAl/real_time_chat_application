@@ -4,8 +4,8 @@ import "time"
 
 type Room struct {
 	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string `json:"name" validate:"required,max=64,min=8"`
+	Description string `json:"description" validate:"max=512,min=0"`
 
 	AllowUsers []string // TODO:#feature
 
