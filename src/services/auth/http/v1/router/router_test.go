@@ -33,12 +33,9 @@ func TestMain(m *testing.M) {
 	logger := logging.New()
 	config.InitConfig(logger)
 
-	mongodbUri := config.MongodbUri()
-	redisUri := config.RedisUri()
-	redisPassword := config.RedisPassword()
-	store := database.New(ctx, mongodbUri, redisUri, redisPassword, logger)
+	store := database.New(ctx, logger)
 
-	SetupAuthRoute(ctx, app, store, logger)
+	SetupAuthRoute(app, store, logger)
 
 	m.Run()
 }

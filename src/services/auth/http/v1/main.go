@@ -7,22 +7,11 @@ import (
 	"github.com/NoobforAl/real_time_chat_application/src/config"
 	"github.com/NoobforAl/real_time_chat_application/src/database"
 	"github.com/NoobforAl/real_time_chat_application/src/logging"
+	"github.com/NoobforAl/real_time_chat_application/src/services/auth/http/v1/middleware"
 	"github.com/NoobforAl/real_time_chat_application/src/services/auth/http/v1/router"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
-
-func setupLoggingMiddleware(log *logrus.Logger) func(*fiber.Ctx) error {
-	return func(ctx *fiber.Ctx) error {
-		log.WithFields(logrus.Fields{
-			"method": ctx.Method(),
-			"path":   ctx.Path(),
-			"ip":     ctx.IP(),
-		}).Info("Request received")
-
-		return ctx.Next()
-	}
-}
 
 func main() {
 	ctx := context.Background()
@@ -33,10 +22,7 @@ func main() {
 	logger := logging.New()
 	config.InitConfig(logger)
 
-	mongodbUri := config.MongodbUri()
-	redisUri := config.RedisUri()
-	redisPassword := config.RedisPassword()
-	store := database.New(ctx, mongodbUri, redisUri, redisPassword, logger)
+	store := database.New(ctx, logger)
 
 	logLogrusType, ok := logger.(*logrus.Logger)
 	if !ok {
@@ -46,13 +32,13 @@ func main() {
 		)
 	}
 
-	app.Use(setupLoggingMiddleware(logLogrusType))
+	app.Use(middleware.SetupLoggingMiddleware(logLogrusType))
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("<h1>Auth Service Is Working</h1>")
 	})
 
-	router.SetupAuthRoute(ctx, app, store, logger)
+	router.SetupAuthRoute(app, store, logger)
 
 	addr := config.AuthServiceUri()
 	logger.Fatal(app.Listen(addr))

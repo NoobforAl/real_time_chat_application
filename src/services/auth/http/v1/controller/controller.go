@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"time"
 
 	"github.com/NoobforAl/real_time_chat_application/src/config"
@@ -13,13 +12,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Login(ctx context.Context, store contract.StoreUser, log contract.Logger) func(*fiber.Ctx) error {
+func Login(store contract.StoreUser, log contract.Logger) func(*fiber.Ctx) error {
 	secretKey := config.SecretKey()
 	maxAgeToken := config.MaxAgeToken()
 
 	salt := config.NoncForHashPassword()
 
 	return func(c *fiber.Ctx) error {
+		ctx := c.Context()
+
 		var loginInfo = struct {
 			Username string `json:"username" validate:"required,max=64,min=8"`
 			Password string `json:"password" validate:"required,max=64,min=8"`
@@ -63,10 +64,12 @@ func Login(ctx context.Context, store contract.StoreUser, log contract.Logger) f
 	}
 }
 
-func Register(ctx context.Context, store contract.StoreUser, log contract.Logger) func(*fiber.Ctx) error {
+func Register(store contract.StoreUser, log contract.Logger) func(*fiber.Ctx) error {
 	salt := config.NoncForHashPassword()
 
 	return func(c *fiber.Ctx) error {
+		ctx := c.Context()
+
 		var user entity.User
 		if err := c.BodyParser(&user); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
