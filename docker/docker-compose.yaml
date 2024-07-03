@@ -1,5 +1,4 @@
 # !! Warning: this docker file for local test ( database )!
-version: "3.8"
 
 services:
     aysncq-webui:

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
     redis:
         image: redis:7.2.4
@@ -28,12 +26,24 @@ services:
         networks:
             - real-time-chat-network
 
+    aysncq-webui:
+        image: hibiken/asynqmon:latest
+        entrypoint: ["/asynqmon", "--redis-addr=redis:6379"]
+        restart: "always"
+        ports:
+            - 8585:8080
+        depends_on:
+            redis:
+                condition: service_healthy
+
     auth_api:
         image: auth_api:latest
         build:
             context: .
             dockerfile: Dockerfile
             target: auth_api
+        ports:
+            - 3000:3000
         env_file:
             - .env
         depends_on:
@@ -50,6 +60,8 @@ services:
             context: .
             dockerfile: Dockerfile
             target: room_api
+        ports:
+            - 3001:3001
         env_file:
             - .env
         depends_on:
@@ -66,22 +78,8 @@ services:
             context: .
             dockerfile: Dockerfile
             target: message_api
-        env_file:
-            - .env
-        depends_on:
-            redis:
-                condition: service_healthy
-            mongodb:
-                condition: service_healthy
-        networks:
-            - real-time-chat-network
-
-    notifications_api:
-        image: notifications_api:latest
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: notifications_api
+        ports:
+            - 3002:3002
         env_file:
             - .env
         depends_on:
@@ -108,22 +106,6 @@ services:
         networks:
             - real-time-chat-network
 
-    rooms_task_server:
-        image: rooms_task_server:latest
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: rooms_task_server
-        env_file:
-            - .env
-        depends_on:
-            redis:
-                condition: service_healthy
-            mongodb:
-                condition: service_healthy
-        networks:
-            - real-time-chat-network
-
     message_task_server:
         image: message_task_server:latest
         build:
@@ -140,22 +122,7 @@ services:
         networks:
             - real-time-chat-network
 
-    notifications_task_server:
-        image: notifications_task_server:latest
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: notifications_task_server
-        env_file:
-            - .env
-        depends_on:
-            redis:
-                condition: service_healthy
-            mongodb:
-                condition: service_healthy
-        networks:
-            - real-time-chat-network
-
 networks:
     real-time-chat-network:
         driver: bridge
+# TODO setup vloum

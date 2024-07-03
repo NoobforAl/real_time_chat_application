@@ -13,9 +13,9 @@ RUN apt-get update -y && \
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-ENV export CGO_ENABLED=0
-ENV export GOARCH=amd64
-ENV export GOOS=linux
+ENV CGO_ENABLED=0
+ENV GOARCH=amd64
+ENV GOOS=linux
 
 RUN make build_all
 
