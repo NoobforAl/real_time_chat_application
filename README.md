@@ -2,6 +2,8 @@
 
 Real-Time Chat Application, This interview task for [`elc.care`]("https://elc.care") co.
 
+See Simple log report: [Report](./doc/report.md)
+
 ## Run Project & Request
 
 How run or build project?  

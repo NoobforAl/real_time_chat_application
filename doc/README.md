@@ -24,7 +24,7 @@ First setup `.env` file like `.env.example`.
 ### Run with Docker
 
 Run:
-> docker compose up -d
+> make run_docker_compose
 
 and run postman, use postman file in doc folder for request to api!
 
