@@ -6,6 +6,8 @@ import (
 
 	"github.com/NoobforAl/real_time_chat_application/src/entity"
 	appErrors "github.com/NoobforAl/real_time_chat_application/src/errors"
+	taskRoom "github.com/NoobforAl/real_time_chat_application/src/tasks/rooms/tasks_rooms"
+	"github.com/hibiken/asynq"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,6 +44,22 @@ func modelRoomToEntity(room Room) entity.Room {
 		Description: room.Description,
 		CreateAt:    room.CreateAt,
 	}
+}
+
+func (s *store) Room(ctx context.Context, roomId string) (entity.Room, error) {
+	objectID, err := primitive.ObjectIDFromHex(roomId)
+	if err != nil {
+		s.log.Error(err)
+		return entity.Room{}, appErrors.ErrNotValidId
+	}
+
+	var room entity.Room
+	err = s.db.Collection("room").FindOne(ctx, bson.M{"_id": objectID}).Decode(&room)
+	if err != nil {
+		return entity.Room{}, err
+	}
+
+	return room, nil
 }
 
 func (s *store) Rooms(ctx context.Context, maxLen int) ([]*entity.Room, error) {
@@ -89,4 +107,16 @@ func (s *store) CreateRoom(ctx context.Context, room entity.Room) (entity.Room, 
 	roomModel.Id = id
 
 	return modelRoomToEntity(roomModel), nil
+}
+
+func (s *store) SendNewRoom(ctx context.Context, room entity.Room) error {
+	msgBroker := s.messageBrokerClient
+
+	newTask, err := taskRoom.NewRoomSaveTask(room)
+	if err != nil {
+		return err
+	}
+
+	_, err = msgBroker.EnqueueContext(ctx, newTask, asynq.MaxRetry(10), asynq.Timeout(60*time.Second))
+	return err
 }

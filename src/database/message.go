@@ -6,6 +6,8 @@ import (
 
 	"github.com/NoobforAl/real_time_chat_application/src/entity"
 	appErrors "github.com/NoobforAl/real_time_chat_application/src/errors"
+	tasksMessage "github.com/NoobforAl/real_time_chat_application/src/tasks/messages/tasks_message"
+	"github.com/hibiken/asynq"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -86,6 +88,72 @@ func (s *store) Messages(ctx context.Context, roomId string, maxLen int) ([]*ent
 	return result, err
 }
 
+func (s *store) UserMessages(ctx context.Context, userId string, startTime, endTime time.Time) ([]*entity.Message, error) {
+	objectID, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		s.log.Error(err)
+		return nil, appErrors.ErrNotValidId
+	}
+
+	filter := bson.M{
+		"user_id": objectID,
+		"timestamp": bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		},
+	}
+
+	cursor, err := s.db.Collection("message").Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err = cursor.Close(ctx); err != nil {
+			s.log.Error(err)
+		}
+	}()
+
+	result := make([]*entity.Message, 0)
+	for cursor.Next(ctx) {
+		var message Message
+		err := cursor.Decode(&message)
+		if err != nil {
+			return nil, err
+		}
+
+		entityMessage := modelMessageToEntity(message)
+		result = append(result, &entityMessage)
+	}
+
+	return result, err
+}
+
+func (s *store) SaveMessageToArchive(ctx context.Context, userId string, messages []*entity.Message) error {
+	messageColl := s.db.Collection("messages")
+	userMessageColl := s.db.Collection("user_message_archive_id_" + userId)
+
+	for _, message := range messages {
+		msg, err := entityMessageToModel(*message)
+		if err != nil {
+			return err
+		}
+
+		_, err = messageColl.DeleteOne(ctx, bson.M{"_id": msg.Id})
+		if err != nil {
+			return err
+		}
+
+		msg.Id = primitive.ObjectID{}
+		_, err = userMessageColl.InsertOne(ctx, msg)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *store) CreateMessage(ctx context.Context, message entity.Message) (entity.Message, error) {
 	messageModel, err := entityMessageToModel(message)
 	if err != nil {
@@ -123,3 +191,18 @@ func (s *store) CreateMessage(ctx context.Context, message entity.Message) (enti
 
 	return modelMessageToEntity(messageModel), nil
 }
+
+func (s *store) SendNewMessage(ctx context.Context, message entity.Message) error {
+	msgBroker := s.messageBrokerClient
+
+	newTask, err := tasksMessage.NewMessageSaveTask(message)
+	if err != nil {
+		return err
+	}
+
+	_, err = msgBroker.EnqueueContext(ctx, newTask, asynq.MaxRetry(10), asynq.Timeout(60*time.Second))
+	return err
+}
+
+func (s *store) SendDailyReportOfMessage(ctx context.Context) error            { return nil }
+func (s *store) SendSignalCleanOldMessageAndArchive(ctx context.Context) error { return nil }

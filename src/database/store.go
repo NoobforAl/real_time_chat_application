@@ -4,7 +4,9 @@ import (
 	"context"
 	"sync"
 
+	"github.com/NoobforAl/real_time_chat_application/src/config"
 	"github.com/NoobforAl/real_time_chat_application/src/contract"
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,13 +14,30 @@ import (
 )
 
 type store struct {
-	db    *mongo.Database
-	cache *redis.Client
-	log   contract.Logger
+	db                  *mongo.Database
+	cache               *redis.Client
+	authClient          *authService
+	messageBrokerClient *asynq.Client
+	log                 contract.Logger
+}
+
+type Opts struct {
+	NeedRedis       bool
+	NeedMongodb     bool
+	NeedAuthService bool
+
+	NeedBrokerRoom         bool
+	NeedBrokerMessage      bool
+	NeedBrokerNotification bool
 }
 
 var onc sync.Once
 var localStore *store
+var DefaultOpts = Opts{
+	NeedRedis:       true,
+	NeedMongodb:     true,
+	NeedAuthService: true,
+}
 
 func initMongodbFiled(
 	ctx context.Context,
@@ -56,37 +75,79 @@ func initMongodbFiled(
 	}
 }
 
+func createNewClientMessageBroker(log contract.Logger) *asynq.Client {
+	log.Debug("init redis client")
+	return asynq.NewClient(asynq.RedisClientOpt{
+		Addr:     config.RedisUri(),
+		Password: config.RedisPassword(),
+	})
+}
+
 func New(
 	ctx context.Context,
-	mongoUri, redisUri, redisPassword string,
 	logger contract.Logger,
+	opts ...Opts,
 ) contract.Store {
 	onc.Do(func() {
-		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-		optsMongodb := options.Client().ApplyURI(mongoUri).SetServerAPIOptions(serverAPI)
+		var (
+			mongoUri      = config.MongodbUri()
+			redisUri      = config.RedisUri()
+			redisPassword = config.RedisPassword()
+			grpcAddr      = config.GrpcAuthUri()
 
-		mongodbClient, err := mongo.Connect(ctx, optsMongodb)
-		if err != nil {
-			logger.Fatal(err)
+			messageBrokerClient *asynq.Client
+			mongoDatabase       *mongo.Database
+			redisClient         *redis.Client
+			authClient          *authService
+		)
+
+		opt := Opts{}
+		if opts == nil {
+			opt = DefaultOpts
+		} else {
+			opt = opts[0]
 		}
 
-		initMongodbFiled(ctx, mongodbClient.Database("real_time_chat_app"), logger)
+		if opt.NeedMongodb {
+			serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+			optsMongodb := options.Client().ApplyURI(mongoUri).SetServerAPIOptions(serverAPI)
 
-		redisClient := redis.NewClient(&redis.Options{
-			Addr:     redisUri,
-			Password: redisPassword,
-			DB:       0,
-		})
+			mongodbClient, err := mongo.Connect(ctx, optsMongodb)
+			if err != nil {
+				logger.Fatal(err)
+			}
+			mongoDatabase = mongodbClient.Database("real_time_chat_app")
+			initMongodbFiled(ctx, mongoDatabase, logger)
+		}
 
-		statusRedis := redisClient.Ping(ctx)
-		if statusRedis.Err() != nil {
-			logger.Fatal(statusRedis.Err().Error())
+		if opt.NeedRedis {
+			redisClient = redis.NewClient(&redis.Options{
+				Addr:     redisUri,
+				Password: redisPassword,
+				DB:       0,
+			})
+
+			statusRedis := redisClient.Ping(ctx)
+			if statusRedis.Err() != nil {
+				logger.Fatal(statusRedis.Err().Error())
+			}
+
+		}
+
+		if opt.NeedAuthService {
+			authClient = newAuthService(grpcAddr, logger)
+		}
+
+		if opt.NeedBrokerRoom || opt.NeedBrokerMessage || opt.NeedBrokerNotification {
+			messageBrokerClient = createNewClientMessageBroker(logger)
 		}
 
 		localStore = &store{
-			db:    mongodbClient.Database("real_time_chat_app"),
-			cache: redisClient,
-			log:   logger,
+			db:                  mongoDatabase,
+			cache:               redisClient,
+			authClient:          authClient,
+			messageBrokerClient: messageBrokerClient,
+			log:                 logger,
 		}
 	})
 

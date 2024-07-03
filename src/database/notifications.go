@@ -227,3 +227,12 @@ func (s *store) UpdateNotificationRoom(ctx context.Context, notificationRoomData
 
 	return modelNotificationRoomToEntity(updatedNotificationRoom), nil
 }
+
+// TODO: feature
+func (s *store) NotificationRoom(ctx context.Context, notificationRoomData entity.NotificationRoom) (entity.NotificationRoom, error) {
+	return entity.NotificationRoom{}, nil
+}
+
+func (s *store) SendNewNotification(ctx context.Context, message entity.Notification) error {
+	return nil
+}
