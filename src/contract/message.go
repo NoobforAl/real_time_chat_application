@@ -12,12 +12,13 @@ type StoreMessage interface {
 	UserMessages(ctx context.Context, userId string, startTime, endTime time.Time) ([]*entity.Message, error)
 	CreateMessage(ctx context.Context, message entity.Message) (entity.Message, error)
 	SaveMessageToArchive(ctx context.Context, userId string, message []*entity.Message) error
+	AllArchiveMessage(ctx context.Context, userId string) ([]*entity.Message, error)
 }
 
 type BrokerMessage interface {
 	SendNewMessage(ctx context.Context, message entity.Message) error
-	SendDailyReportOfMessage(ctx context.Context) error
-	SendSignalCleanOldMessageAndArchive(ctx context.Context) error
+	SendDailyReportOfMessage(ctx context.Context, timeReg string)
+	SendSignalCleanOldMessageAndArchive(ctx context.Context, timeReg string)
 }
 
 type StoreMessageAndCache interface {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/NoobforAl/real_time_chat_application/src/config"
 	"github.com/NoobforAl/real_time_chat_application/src/entity"
 	appErrors "github.com/NoobforAl/real_time_chat_application/src/errors"
 	tasksMessage "github.com/NoobforAl/real_time_chat_application/src/tasks/messages/tasks_message"
@@ -154,6 +155,28 @@ func (s *store) SaveMessageToArchive(ctx context.Context, userId string, message
 	return nil
 }
 
+func (s *store) AllArchiveMessage(ctx context.Context, userId string) ([]*entity.Message, error) {
+	userMessageColl := s.db.Collection("user_message_archive_id_" + userId)
+
+	cursor, err := userMessageColl.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	var messagesArchived []*entity.Message
+	for cursor.Next(ctx) {
+		var message entity.Message
+		err := cursor.Decode(&message)
+		if err != nil {
+			return nil, err
+		}
+
+		messagesArchived = append(messagesArchived, &message)
+	}
+
+	return messagesArchived, nil
+}
+
 func (s *store) CreateMessage(ctx context.Context, message entity.Message) (entity.Message, error) {
 	messageModel, err := entityMessageToModel(message)
 	if err != nil {
@@ -204,5 +227,64 @@ func (s *store) SendNewMessage(ctx context.Context, message entity.Message) erro
 	return err
 }
 
-func (s *store) SendDailyReportOfMessage(ctx context.Context) error            { return nil }
-func (s *store) SendSignalCleanOldMessageAndArchive(ctx context.Context) error { return nil }
+func (s *store) SendDailyReportOfMessage(ctx context.Context, timeReg string) {
+	redisConnOpt := asynq.RedisClientOpt{
+		Addr:     config.RedisUri(),
+		Password: config.RedisPassword(),
+	}
+
+	scheduler := asynq.NewScheduler(redisConnOpt, &asynq.SchedulerOpts{
+		Logger: s.log,
+	})
+
+	task, err := tasksMessage.NewMessageReportTask()
+	if err != nil {
+		s.log.Fatalf("could not create task: %v", err)
+	}
+
+	entryID, err := scheduler.Register(timeReg, task)
+	if err != nil {
+		s.log.Fatalf("could not register task: %v", err)
+	}
+
+	s.log.Infof("Scheduled task with entry ID: %s\n", entryID)
+
+	if err := scheduler.Run(); err != nil {
+		s.log.Fatalf("could not start scheduler: %v", err)
+	}
+
+	defer scheduler.Shutdown()
+
+	<-ctx.Done()
+}
+
+func (s *store) SendSignalCleanOldMessageAndArchive(ctx context.Context, timeReg string) {
+	redisConnOpt := asynq.RedisClientOpt{
+		Addr:     config.RedisUri(),
+		Password: config.RedisPassword(),
+	}
+
+	scheduler := asynq.NewScheduler(redisConnOpt, &asynq.SchedulerOpts{
+		Logger: s.log,
+	})
+
+	task, err := tasksMessage.NewMessageArchiveTask()
+	if err != nil {
+		s.log.Fatalf("could not create task: %v", err)
+	}
+
+	entryID, err := scheduler.Register(timeReg, task)
+	if err != nil {
+		s.log.Fatalf("could not register task: %v", err)
+	}
+
+	s.log.Infof("Scheduled task with entry ID: %s\n", entryID)
+
+	if err := scheduler.Run(); err != nil {
+		s.log.Fatalf("could not start scheduler: %v", err)
+	}
+
+	defer scheduler.Shutdown()
+
+	<-ctx.Done()
+}
