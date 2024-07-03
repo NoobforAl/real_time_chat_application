@@ -61,6 +61,26 @@ func (s *store) User(ctx context.Context, username string) (entity.User, error) 
 	return modelUserToEntity(user), nil
 }
 
+func (s *store) UserIds(ctx context.Context) ([]string, error) {
+	var userIds []string
+	cursor, err := s.db.Collection("user").Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		var user User
+		err := cursor.Decode(&user)
+		if err != nil {
+			return nil, err
+		}
+
+		userIds = append(userIds, user.Id.Hex())
+	}
+
+	return userIds, nil
+}
+
 func (s *store) CreateUser(ctx context.Context, userData entity.User) (entity.User, error) {
 	user := entityUserToModel(userData)
 
