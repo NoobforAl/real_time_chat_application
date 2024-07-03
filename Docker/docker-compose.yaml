@@ -2,11 +2,26 @@
 version: "3.8"
 
 services:
+    aysncq-webui:
+        image: hibiken/asynqmon:latest
+        entrypoint: ["/asynqmon", "--redis-addr=redis:6379"]
+        restart: "always"
+        ports:
+            - 8585:8080
+        depends_on:
+            redis:
+                condition: service_healthy
+
     redis:
         image: redis:7.2.4
         ports:
             - "6379:6379"
         restart: always
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
 
     mongodb:
         image: mongo:7.0.9
